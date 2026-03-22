@@ -1,174 +1,172 @@
-# CRYPTO
+# Nexara Blockchain
 
-## Abstract
-This repository serves as the core codebase for the **crypto** system. It encompasses the source code, architectural configurations, and structural assets required for deployment, execution, and continued development.
+A next-generation Layer-1 blockchain platform written in Rust, featuring adaptive sharding, a custom virtual machine (NXVM), a domain-specific smart contract language (NexLang), cross-chain bridging, and a tokenomics engine. Nexara is designed for high throughput, low latency, and horizontal scalability.
 
-## System Architecture
+---
 
-### Project Specifications
-- **Technology Stack:** Rust Ecosystem / Systems Programming
-- **Primary Language:** Rust
-- **Execution Entrypoint:** Cargo workspace build
+## Table of Contents
 
-### Architectural Paradigm
-The system is designed utilizing a modular architectural approach, effectively isolating application logic, integration interfaces, and support configurations. Transient build directories, dependency caches, and virtual environments are explicitly excluded from source control to maintain structural integrity and reproducibility.
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Workspace Structure](#workspace-structure)
+- [Crate Descriptions](#crate-descriptions)
+- [Building](#building)
+- [Testing](#testing)
+- [License](#license)
 
-- **Application Layer:** Contains the core executables, command handlers, and user interface endpoints.
-- **Domain Layer:** Encapsulates the business logic, specialized feature modules, and data processing routines.
-- **Integration Layer:** Manages internal and external communications, including database persistent layers, API bindings, and file system operations.
-- **Support Infrastructure:** Houses configuration matrices, deployment scripts, technical documentation, and testing frameworks.
+---
 
-## Data and Execution Flow
-1. **Initialization:** The platform bootstraps via the designated subsystem entrypoint.
-2. **Subsystem Routing:** Incoming requests, system commands, or execution triggers are directed to the designated feature modules within the domain layer.
-3. **Information Processing:** Domain logic is applied, interfacing closely with the integration layer for data persistence or external data retrieval as necessitated by the operation.
-4. **Resolution:** Computed artifacts and operational outputs are returned to the invoking interface, successfully terminating the transaction lifecycle.
+## Overview
 
-## Repository Component Map
-The following outlines the primary structural components and module layout of the project architecture:
+Nexara is a modular blockchain platform built as a Rust workspace with 12 crates, each handling a distinct concern:
 
-```text
-.DS_Store
-.git
-.gitignore
-Cargo.lock
-Cargo.toml
-README.md
-contracts
-contracts/dex.nxl
-contracts/governance.nxl
-contracts/nft.nxl
-contracts/shard_bridge.nxl
-contracts/token.nxl
-crates
-crates/.DS_Store
-crates/nexara-bridge
-crates/nexara-consensus
-crates/nexara-core
-crates/nexara-crypto
-crates/nexara-mempool
-crates/nexara-network
-crates/nexara-node
-crates/nexara-shard
-crates/nexara-tokenomics
-crates/nexlang
-crates/nxvm
-docs
-docs/architecture.md
-docs/nexlang-spec.md
-docs/whitepaper.md
-scripts
-scripts/bench.sh
-scripts/build.sh
-scripts/test.sh
-target
-tests
-tests/nexara-integration-tests
+- **Consensus** -- Custom consensus protocol for block finalization
+- **Sharding** -- Adaptive shard management for horizontal scaling
+- **NexLang** -- Domain-specific language for writing smart contracts
+- **NXVM** -- Custom virtual machine for contract execution
+- **Bridge** -- Cross-chain interoperability layer
+- **Tokenomics** -- Economic model, staking, and reward distribution
+- **Mempool** -- Transaction queuing and prioritization
+- **Networking** -- Peer-to-peer communication via libp2p
+
+---
+
+## Architecture
+
+```
++-----------------------------------------------------------+
+|                      nexara-node                          |
+|  CLI entry point | Service orchestration | RPC server     |
++-----------------------------------------------------------+
+        |         |          |           |          |
+        v         v          v           v          v
++--------+ +----------+ +---------+ +--------+ +--------+
+| nexara | | nexara   | | nexara  | | nexara | | nexara |
+| -core  | | -consen  | | -shard  | | -net   | | -mem   |
+|        | |  sus     | |         | |  work  | |  pool  |
+| Blocks | | PoS/BFT  | | Dynamic | | libp2p | | Tx     |
+| State  | | Finality | | Shards  | | P2P    | | Queue  |
+| Crypto | |          | | Routing | | Gossip | |        |
++--------+ +----------+ +---------+ +--------+ +--------+
+        |                     |
+        v                     v
++-------------------+ +-------------------+
+|     nexlang       | |    nexara-bridge  |
+|  Smart Contract   | |  Cross-Chain      |
+|  Language (DSL)   | |  Interoperability |
+|  Parser + Compiler| |  Lock & Mint      |
++-------------------+ +-------------------+
+        |
+        v
++-------------------+
+|       nxvm        |
+|  Virtual Machine  |
+|  Bytecode Exec    |
+|  Gas Metering     |
++-------------------+
+
++-------------------------------------------+
+|          nexara-tokenomics               |
+|  Staking | Rewards | Supply Schedule     |
++-------------------------------------------+
 ```
 
-## Administrative Information
-- **Maintainer:** karthik-idikuda
-- **Documentation Build Date:** 2026-03-22
-- **Visibility:** Public Repository
+---
 
-## Architecture Overview
+## Technology Stack
 
-### Project Type
-- **Primary stack:** Rust workspace / blockchain components
-- **Primary language:** Rust
-- **Primary entrypoint/build root:** Cargo workspace via Cargo.toml
+| Component           | Technology                                        |
+|---------------------|---------------------------------------------------|
+| Language            | Rust (2021 edition)                               |
+| Async Runtime       | Tokio (full features)                             |
+| Serialization       | serde + serde_json + bincode                      |
+| Cryptography        | blake3, sha3                                      |
+| Networking          | libp2p (TCP + Noise + Yamux + Gossipsub + mDNS)   |
+| Storage             | RocksDB                                           |
+| CLI                 | clap 4.4                                          |
+| Concurrency         | dashmap, rayon                                    |
+| Benchmarking        | criterion                                         |
+| Error Handling      | thiserror, anyhow                                 |
+| Logging             | tracing + tracing-subscriber                      |
 
-### High-Level Architecture
-- This repository is organized in modular directories grouped by concern (application code, configuration, scripts, documentation, and assets).
-- Runtime/build artifacts such as virtual environments, node modules, and compiled outputs are intentionally excluded from architecture mapping.
-- The project follows a layered flow: entry point -> domain/application modules -> integrations/data/config.
+---
 
-### Component Breakdown
-- **Application layer:** Core executables, services, UI, or command handlers.
-- **Domain/business layer:** Feature logic and processing modules.
-- **Integration layer:** External APIs, databases, files, or platform-specific connectors.
-- **Support layer:** Config, scripts, docs, tests, and static assets.
+## Workspace Structure
 
-### Data/Execution Flow
-1. Start from the configured entrypoint or package scripts.
-2. Route execution into feature-specific modules.
-3. Process domain logic and interact with integrations/storage.
-4. Return results to UI/API/CLI outputs.
-
-### Directory Map (Top-Level + Key Subfolders)
 ```
-Cargo.toml
-crates
-crates/nxvm
-crates/nexara-core
-crates/nexara-crypto
-crates/.DS_Store
-crates/nexara-shard
-crates/nexara-mempool
-crates/nexara-bridge
-crates/nexlang
-crates/nexara-network
-crates/nexara-consensus
-crates/nexara-node
-crates/nexara-tokenomics
-.DS_Store
-target
-contracts
-contracts/governance.nxl
-contracts/nft.nxl
-contracts/token.nxl
-contracts/shard_bridge.nxl
-contracts/dex.nxl
-tests
-tests/nexara-integration-tests
-Cargo.lock
-docs
-docs/nexlang-spec.md
-docs/architecture.md
-docs/whitepaper.md
-README.md
-.gitignore
-scripts
-scripts/bench.sh
-scripts/build.sh
-scripts/test.sh
+nexara/
+|
+|-- Cargo.toml                    # Workspace root configuration
+|-- Cargo.lock                    # Dependency lock file
+|
+|-- crates/
+|   |-- nexara-core/              # Core blockchain primitives
+|   |-- nexara-crypto/            # Cryptographic operations
+|   |-- nexara-consensus/         # Consensus protocol
+|   |-- nexara-network/           # P2P networking layer
+|   |-- nexara-shard/             # Adaptive sharding engine
+|   |-- nexara-mempool/           # Transaction mempool
+|   |-- nexlang/                  # Smart contract language
+|   |-- nxvm/                     # Virtual machine
+|   |-- nexara-bridge/            # Cross-chain bridge
+|   |-- nexara-tokenomics/        # Economic model
+|   +-- nexara-node/              # Node binary and orchestration
+|
+|-- contracts/                    # Example NexLang contracts
+|-- docs/                         # Technical documentation
+|-- scripts/                      # Build and deployment scripts
++-- tests/
+    +-- nexara-integration-tests/ # End-to-end integration tests
 ```
 
-### Notes
-- Architecture section auto-generated on 2026-03-22 and can be refined further with exact runtime/deployment details.
+---
 
-## Technical Stack
+## Crate Descriptions
 
-- Core language: Rust
-- Primary stack: Rust workspace / blockchain components
+| Crate               | Purpose                                               |
+|----------------------|-------------------------------------------------------|
+| nexara-core          | Block structures, state management, transaction types |
+| nexara-crypto        | Hashing (blake3, sha3), key generation, signatures    |
+| nexara-consensus     | Block proposal, voting, finalization                  |
+| nexara-network       | libp2p peer discovery, gossipsub message propagation  |
+| nexara-shard         | Dynamic shard creation, routing, cross-shard messaging|
+| nexara-mempool       | Transaction queuing, fee-based prioritization         |
+| nexlang              | DSL parser, compiler, AST representation              |
+| nxvm                 | Bytecode interpreter, gas metering, contract state    |
+| nexara-bridge        | Cross-chain lock-and-mint, relay verification         |
+| nexara-tokenomics    | Token supply, staking, validator rewards              |
+| nexara-node          | CLI entry point, service wiring, RPC endpoints        |
 
-## Setup
+---
 
-Typical local setup for Rust workspaces:
-
-1. Ensure Rust and Cargo are installed.
-2. Build the workspace from the Cargo.toml root.
+## Building
 
 ```bash
-cargo build
+# Build all crates
+cargo build --release
 
+# Build a specific crate
+cargo build -p nexara-node --release
 ```
 
-## Running Locally
-
-Run binaries or tests via Cargo from the workspace root. For example:
-
-```bash
-cargo run --bin <binary-name>
-
-```
+---
 
 ## Testing
 
-Execute the Rust test suite using Cargo:
-
 ```bash
+# Run all tests
 cargo test
 
+# Run integration tests
+cargo test -p nexara-integration-tests
+
+# Run benchmarks
+cargo bench
 ```
 
+---
+
+## License
+
+This project is released for educational and research purposes.
