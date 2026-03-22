@@ -70,3 +70,105 @@ tests/nexara-integration-tests
 - **Maintainer:** karthik-idikuda
 - **Documentation Build Date:** 2026-03-22
 - **Visibility:** Public Repository
+
+## Architecture Overview
+
+### Project Type
+- **Primary stack:** Rust workspace / blockchain components
+- **Primary language:** Rust
+- **Primary entrypoint/build root:** Cargo workspace via Cargo.toml
+
+### High-Level Architecture
+- This repository is organized in modular directories grouped by concern (application code, configuration, scripts, documentation, and assets).
+- Runtime/build artifacts such as virtual environments, node modules, and compiled outputs are intentionally excluded from architecture mapping.
+- The project follows a layered flow: entry point -> domain/application modules -> integrations/data/config.
+
+### Component Breakdown
+- **Application layer:** Core executables, services, UI, or command handlers.
+- **Domain/business layer:** Feature logic and processing modules.
+- **Integration layer:** External APIs, databases, files, or platform-specific connectors.
+- **Support layer:** Config, scripts, docs, tests, and static assets.
+
+### Data/Execution Flow
+1. Start from the configured entrypoint or package scripts.
+2. Route execution into feature-specific modules.
+3. Process domain logic and interact with integrations/storage.
+4. Return results to UI/API/CLI outputs.
+
+### Directory Map (Top-Level + Key Subfolders)
+```
+Cargo.toml
+crates
+crates/nxvm
+crates/nexara-core
+crates/nexara-crypto
+crates/.DS_Store
+crates/nexara-shard
+crates/nexara-mempool
+crates/nexara-bridge
+crates/nexlang
+crates/nexara-network
+crates/nexara-consensus
+crates/nexara-node
+crates/nexara-tokenomics
+.DS_Store
+target
+contracts
+contracts/governance.nxl
+contracts/nft.nxl
+contracts/token.nxl
+contracts/shard_bridge.nxl
+contracts/dex.nxl
+tests
+tests/nexara-integration-tests
+Cargo.lock
+docs
+docs/nexlang-spec.md
+docs/architecture.md
+docs/whitepaper.md
+README.md
+.gitignore
+scripts
+scripts/bench.sh
+scripts/build.sh
+scripts/test.sh
+```
+
+### Notes
+- Architecture section auto-generated on 2026-03-22 and can be refined further with exact runtime/deployment details.
+
+## Technical Stack
+
+- Core language: Rust
+- Primary stack: Rust workspace / blockchain components
+
+## Setup
+
+Typical local setup for Rust workspaces:
+
+1. Ensure Rust and Cargo are installed.
+2. Build the workspace from the Cargo.toml root.
+
+```bash
+cargo build
+
+```
+
+## Running Locally
+
+Run binaries or tests via Cargo from the workspace root. For example:
+
+```bash
+cargo run --bin <binary-name>
+
+```
+
+## Testing
+
+Execute the Rust test suite using Cargo:
+
+```bash
+cargo test
+
+```
+
