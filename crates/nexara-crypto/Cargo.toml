@@ -1,0 +1,20 @@
+[package]
+name = "nexara-crypto"
+version = "0.1.0"
+edition = "2021"
+description = "Post-quantum cryptography primitives for the NEXARA blockchain"
+
+[dependencies]
+serde = { workspace = true }
+blake3 = { workspace = true }
+sha3 = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+zeroize = "1.7"
+hmac = "0.12"
+rayon = { workspace = true }
+bincode = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

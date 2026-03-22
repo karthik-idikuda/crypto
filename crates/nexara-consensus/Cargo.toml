@@ -1,0 +1,14 @@
+[package]
+name = "nexara-consensus"
+version = "0.1.0"
+edition = "2021"
+description = "HybridSync consensus engine for the NEXARA blockchain"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+nexara-core = { path = "../nexara-core" }
+serde = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+rand = { workspace = true }
+tracing = { workspace = true }

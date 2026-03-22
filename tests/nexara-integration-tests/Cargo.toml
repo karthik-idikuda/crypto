@@ -1,0 +1,27 @@
+[package]
+name = "nexara-integration-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+nexara-crypto = { path = "../../crates/nexara-crypto" }
+nexara-core = { path = "../../crates/nexara-core" }
+nexara-consensus = { path = "../../crates/nexara-consensus" }
+nexara-shard = { path = "../../crates/nexara-shard" }
+nexara-mempool = { path = "../../crates/nexara-mempool" }
+nexara-bridge = { path = "../../crates/nexara-bridge" }
+nexara-tokenomics = { path = "../../crates/nexara-tokenomics" }
+nexlang = { path = "../../crates/nexlang" }
+nxvm = { path = "../../crates/nxvm" }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "bench_crypto"
+harness = false
+
+[[bench]]
+name = "bench_vm"
+harness = false

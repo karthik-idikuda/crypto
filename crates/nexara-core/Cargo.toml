@@ -1,0 +1,16 @@
+[package]
+name = "nexara-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core blockchain primitives for the NEXARA blockchain"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+rand = { workspace = true }

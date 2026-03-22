@@ -1,0 +1,96 @@
+// Decentralized Exchange — AMM-based DEX on NEXARA
+// NEXLANG Example Contract #2
+
+@pqc_secure
+contract NexaDEX {
+    state owner: Address;
+    state fee_bps: U256;
+    state pools: Map<Bytes, Pool>;
+
+    struct Pool {
+        token_a: Address,
+        token_b: Address,
+        reserve_a: U256,
+        reserve_b: U256,
+        total_lp: U256,
+        lp_balances: Map<Address, U256>,
+    }
+
+    event PoolCreated(token_a: Address, token_b: Address);
+    event LiquidityAdded(provider: Address, amount_a: U256, amount_b: U256, lp_minted: U256);
+    event LiquidityRemoved(provider: Address, amount_a: U256, amount_b: U256, lp_burned: U256);
+    event Swap(sender: Address, token_in: Address, amount_in: U256, amount_out: U256);
+
+    @constructor
+    fn init() {
+        self.owner = msg.sender;
+        self.fee_bps = 30; // 0.3% fee
+    }
+
+    @public
+    fn create_pool(token_a: Address, token_b: Address) {
+        let pool_id = hash(token_a, token_b);
+        require(self.pools[pool_id].total_lp == 0, "Pool already exists");
+
+        self.pools[pool_id] = Pool {
+            token_a: token_a,
+            token_b: token_b,
+            reserve_a: 0,
+            reserve_b: 0,
+            total_lp: 0,
+            lp_balances: Map::new(),
+        };
+        emit PoolCreated(token_a, token_b);
+    }
+
+    @public
+    fn add_liquidity(token_a: Address, token_b: Address, amount_a: U256, amount_b: U256) -> U256 {
+        let pool_id = hash(token_a, token_b);
+        let pool = self.pools[pool_id];
+
+        let lp_minted: U256;
+        if pool.total_lp == 0 {
+            lp_minted = sqrt(amount_a * amount_b);
+        } else {
+            let lp_a = amount_a * pool.total_lp / pool.reserve_a;
+            let lp_b = amount_b * pool.total_lp / pool.reserve_b;
+            lp_minted = min(lp_a, lp_b);
+        }
+
+        pool.reserve_a = pool.reserve_a + amount_a;
+        pool.reserve_b = pool.reserve_b + amount_b;
+        pool.total_lp = pool.total_lp + lp_minted;
+        pool.lp_balances[msg.sender] = pool.lp_balances[msg.sender] + lp_minted;
+
+        emit LiquidityAdded(msg.sender, amount_a, amount_b, lp_minted);
+        return lp_minted;
+    }
+
+    @public
+    fn swap(token_in: Address, token_out: Address, amount_in: U256) -> U256 {
+        let pool_id = hash(token_in, token_out);
+        let pool = self.pools[pool_id];
+        require(pool.total_lp > 0, "Pool does not exist");
+
+        let fee = amount_in * self.fee_bps / 10000;
+        let net_in = amount_in - fee;
+
+        // x * y = k constant product
+        let amount_out = pool.reserve_b * net_in / (pool.reserve_a + net_in);
+        require(amount_out > 0, "Insufficient output amount");
+
+        pool.reserve_a = pool.reserve_a + amount_in;
+        pool.reserve_b = pool.reserve_b - amount_out;
+
+        emit Swap(msg.sender, token_in, amount_in, amount_out);
+        return amount_out;
+    }
+
+    @view
+    fn get_price(token_a: Address, token_b: Address) -> U256 {
+        let pool_id = hash(token_a, token_b);
+        let pool = self.pools[pool_id];
+        require(pool.reserve_a > 0, "No liquidity");
+        return pool.reserve_b * 1000000 / pool.reserve_a;
+    }
+}

@@ -1,0 +1,11 @@
+[package]
+name = "nexlang"
+version = "0.1.0"
+edition = "2021"
+description = "NEXLANG smart contract language compiler for the NEXARA blockchain"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

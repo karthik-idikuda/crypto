@@ -1,0 +1,18 @@
+[package]
+name = "nexara-network"
+version = "0.1.0"
+edition = "2021"
+description = "P2P networking layer for the NEXARA blockchain"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+nexara-core = { path = "../nexara-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+libp2p = { workspace = true }
+rand = { workspace = true }

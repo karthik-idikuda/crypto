@@ -1,0 +1,110 @@
+// Cross-Shard Bridge — Transfer assets between NEXARA shards
+// NEXLANG Example Contract #5
+
+@pqc_secure
+contract ShardBridge {
+    state owner: Address;
+    state nonce: U256;
+    state pending: Map<Bytes, BridgeRequest>;
+    state completed: Map<Bytes, Bool>;
+    state relayers: Map<Address, Bool>;
+    state required_confirmations: U256;
+
+    struct BridgeRequest {
+        sender: Address,
+        recipient: Address,
+        amount: U256,
+        source_shard: U256,
+        dest_shard: U256,
+        nonce: U256,
+        confirmations: U256,
+        confirmed_by: Map<Address, Bool>,
+        completed: Bool,
+    }
+
+    event BridgeInitiated(id: Bytes, sender: Address, dest_shard: U256, amount: U256);
+    event BridgeConfirmed(id: Bytes, relayer: Address, confirmations: U256);
+    event BridgeCompleted(id: Bytes, recipient: Address, amount: U256);
+    event RelayerAdded(relayer: Address);
+    event RelayerRemoved(relayer: Address);
+
+    @constructor
+    fn init(required_confs: U256) {
+        self.owner = msg.sender;
+        self.nonce = 0;
+        self.required_confirmations = required_confs;
+        self.relayers[msg.sender] = true;
+    }
+
+    @only_owner
+    fn add_relayer(relayer: Address) {
+        self.relayers[relayer] = true;
+        emit RelayerAdded(relayer);
+    }
+
+    @only_owner
+    fn remove_relayer(relayer: Address) {
+        self.relayers[relayer] = false;
+        emit RelayerRemoved(relayer);
+    }
+
+    @public
+    @payable
+    fn initiate_bridge(recipient: Address, dest_shard: U256) -> Bytes {
+        require(msg.value > 0, "Must send tokens to bridge");
+        require(dest_shard < 100, "Invalid destination shard");
+
+        self.nonce = self.nonce + 1;
+        let id = hash(msg.sender, self.nonce, dest_shard);
+
+        self.pending[id] = BridgeRequest {
+            sender: msg.sender,
+            recipient: recipient,
+            amount: msg.value,
+            source_shard: shard.id,
+            dest_shard: dest_shard,
+            nonce: self.nonce,
+            confirmations: 0,
+            confirmed_by: Map::new(),
+            completed: false,
+        };
+
+        emit BridgeInitiated(id, msg.sender, dest_shard, msg.value);
+        return id;
+    }
+
+    @public
+    fn confirm(id: Bytes) {
+        require(self.relayers[msg.sender], "Not a relayer");
+        let request = self.pending[id];
+        require(!request.completed, "Already completed");
+        require(!request.confirmed_by[msg.sender], "Already confirmed");
+
+        request.confirmed_by[msg.sender] = true;
+        request.confirmations = request.confirmations + 1;
+
+        emit BridgeConfirmed(id, msg.sender, request.confirmations);
+
+        if request.confirmations >= self.required_confirmations {
+            request.completed = true;
+            self.completed[id] = true;
+            send(request.recipient, request.amount);
+            emit BridgeCompleted(id, request.recipient, request.amount);
+        }
+    }
+
+    @view
+    fn get_request(id: Bytes) -> BridgeRequest {
+        return self.pending[id];
+    }
+
+    @view
+    fn is_relayer(addr: Address) -> Bool {
+        return self.relayers[addr];
+    }
+
+    @view
+    fn is_completed(id: Bytes) -> Bool {
+        return self.completed[id];
+    }
+}

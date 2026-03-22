@@ -1,0 +1,134 @@
+// NFT Marketplace — Non-fungible token minting and trading
+// NEXLANG Example Contract #4
+
+@pqc_secure
+contract NexaNFT {
+    state owner: Address;
+    state next_token_id: U256;
+    state owners: Map<U256, Address>;
+    state metadata: Map<U256, TokenMeta>;
+    state approvals: Map<U256, Address>;
+    state listings: Map<U256, Listing>;
+
+    struct TokenMeta {
+        creator: Address,
+        uri: String,
+        royalty_bps: U256,
+    }
+
+    struct Listing {
+        seller: Address,
+        price: U256,
+        active: Bool,
+    }
+
+    event Mint(token_id: U256, creator: Address, uri: String);
+    event Transfer(from: Address, to: Address, token_id: U256);
+    event Approval(owner: Address, approved: Address, token_id: U256);
+    event Listed(token_id: U256, seller: Address, price: U256);
+    event Sale(token_id: U256, buyer: Address, price: U256);
+    event Delisted(token_id: U256);
+
+    @constructor
+    fn init() {
+        self.owner = msg.sender;
+        self.next_token_id = 1;
+    }
+
+    @public
+    fn mint(uri: String, royalty_bps: U256) -> U256 {
+        require(royalty_bps <= 1000, "Royalty cannot exceed 10%");
+        let token_id = self.next_token_id;
+        self.next_token_id = self.next_token_id + 1;
+
+        self.owners[token_id] = msg.sender;
+        self.metadata[token_id] = TokenMeta {
+            creator: msg.sender,
+            uri: uri,
+            royalty_bps: royalty_bps,
+        };
+
+        emit Mint(token_id, msg.sender, uri);
+        return token_id;
+    }
+
+    @public
+    fn transfer(to: Address, token_id: U256) {
+        require(self.owners[token_id] == msg.sender, "Not token owner");
+        require(to != Address::zero(), "Cannot transfer to zero address");
+
+        self.owners[token_id] = to;
+        self.approvals[token_id] = Address::zero();
+
+        // Cancel any active listing
+        if self.listings[token_id].active {
+            self.listings[token_id].active = false;
+        }
+
+        emit Transfer(msg.sender, to, token_id);
+    }
+
+    @public
+    fn approve(to: Address, token_id: U256) {
+        require(self.owners[token_id] == msg.sender, "Not token owner");
+        self.approvals[token_id] = to;
+        emit Approval(msg.sender, to, token_id);
+    }
+
+    @public
+    fn list_for_sale(token_id: U256, price: U256) {
+        require(self.owners[token_id] == msg.sender, "Not token owner");
+        require(price > 0, "Price must be greater than zero");
+
+        self.listings[token_id] = Listing {
+            seller: msg.sender,
+            price: price,
+            active: true,
+        };
+
+        emit Listed(token_id, msg.sender, price);
+    }
+
+    @public
+    @payable
+    fn buy(token_id: U256) {
+        let listing = self.listings[token_id];
+        require(listing.active, "Not listed for sale");
+        require(msg.value >= listing.price, "Insufficient payment");
+
+        let meta = self.metadata[token_id];
+        let royalty = listing.price * meta.royalty_bps / 10000;
+        let seller_amount = listing.price - royalty;
+
+        // Transfer payment
+        send(listing.seller, seller_amount);
+        if royalty > 0 {
+            send(meta.creator, royalty);
+        }
+
+        // Transfer ownership
+        self.owners[token_id] = msg.sender;
+        self.listings[token_id].active = false;
+        self.approvals[token_id] = Address::zero();
+
+        emit Sale(token_id, msg.sender, listing.price);
+        emit Transfer(listing.seller, msg.sender, token_id);
+    }
+
+    @public
+    fn delist(token_id: U256) {
+        require(self.owners[token_id] == msg.sender, "Not token owner");
+        self.listings[token_id].active = false;
+        emit Delisted(token_id);
+    }
+
+    @view
+    fn owner_of(token_id: U256) -> Address {
+        return self.owners[token_id];
+    }
+
+    @view
+    fn token_uri(token_id: U256) -> String {
+        return self.metadata[token_id].uri;
+    }
+}

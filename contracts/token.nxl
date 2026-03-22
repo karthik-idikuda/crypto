@@ -1,0 +1,82 @@
+// NXR Token — ERC-20-like fungible token on NEXARA
+// NEXLANG Example Contract #1
+
+@pqc_secure
+contract NXRToken {
+    state owner: Address;
+    state total_supply: U256;
+    state balances: Map<Address, U256>;
+    state allowances: Map<Address, Map<Address, U256>>;
+    state name: String;
+    state symbol: String;
+    state decimals: U8;
+
+    event Transfer(from: Address, to: Address, amount: U256);
+    event Approval(owner: Address, spender: Address, amount: U256);
+    event Mint(to: Address, amount: U256);
+    event Burn(from: Address, amount: U256);
+
+    @constructor
+    fn init(initial_supply: U256) {
+        self.owner = msg.sender;
+        self.name = "NEXARA";
+        self.symbol = "NXR";
+        self.decimals = 18;
+        self.total_supply = initial_supply;
+        self.balances[msg.sender] = initial_supply;
+        emit Transfer(Address::zero(), msg.sender, initial_supply);
+    }
+
+    @public
+    fn transfer(to: Address, amount: U256) -> Bool {
+        require(self.balances[msg.sender] >= amount, "Insufficient balance");
+        require(to != Address::zero(), "Cannot transfer to zero address");
+        self.balances[msg.sender] = self.balances[msg.sender] - amount;
+        self.balances[to] = self.balances[to] + amount;
+        emit Transfer(msg.sender, to, amount);
+        return true;
+    }
+
+    @public
+    fn approve(spender: Address, amount: U256) -> Bool {
+        self.allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    @public
+    fn transfer_from(from: Address, to: Address, amount: U256) -> Bool {
+        require(self.balances[from] >= amount, "Insufficient balance");
+        require(self.allowances[from][msg.sender] >= amount, "Insufficient allowance");
+        self.balances[from] = self.balances[from] - amount;
+        self.balances[to] = self.balances[to] + amount;
+        self.allowances[from][msg.sender] = self.allowances[from][msg.sender] - amount;
+        emit Transfer(from, to, amount);
+        return true;
+    }
+
+    @view
+    fn balance_of(account: Address) -> U256 {
+        return self.balances[account];
+    }
+
+    @view
+    fn allowance(owner: Address, spender: Address) -> U256 {
+        return self.allowances[owner][spender];
+    }
+
+    @only_owner
+    fn mint(to: Address, amount: U256) {
+        self.total_supply = self.total_supply + amount;
+        self.balances[to] = self.balances[to] + amount;
+        emit Mint(to, amount);
+    }
+
+    @only_owner
+    fn burn(from: Address, amount: U256) {
+        require(self.balances[from] >= amount, "Insufficient balance to burn");
+        self.total_supply = self.total_supply - amount;
+        self.balances[from] = self.balances[from] - amount;
+        emit Burn(from, amount);
+    }
+}

@@ -1,0 +1,31 @@
+[package]
+name = "nexara-node"
+version = "0.1.0"
+edition = "2021"
+description = "Full node binary for the NEXARA blockchain"
+
+[[bin]]
+name = "nexara"
+path = "src/main.rs"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+nexara-core = { path = "../nexara-core" }
+nexara-consensus = { path = "../nexara-consensus" }
+nexara-network = { path = "../nexara-network" }
+nexara-shard = { path = "../nexara-shard" }
+nexara-mempool = { path = "../nexara-mempool" }
+nexara-tokenomics = { path = "../nexara-tokenomics" }
+nexara-bridge = { path = "../nexara-bridge" }
+nexlang = { path = "../nexlang" }
+nxvm = { path = "../nxvm" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+hex = { workspace = true }

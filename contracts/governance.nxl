@@ -1,0 +1,120 @@
+// Governance DAO — On-chain governance for NEXARA protocol
+// NEXLANG Example Contract #3
+
+@pqc_secure
+contract NexaGovernance {
+    state owner: Address;
+    state proposal_count: U256;
+    state proposals: Map<U256, Proposal>;
+    state voting_period: U256;
+    state quorum_bps: U256;
+    state token: Address;
+
+    struct Proposal {
+        proposer: Address,
+        title: String,
+        description: String,
+        start_block: U256,
+        end_block: U256,
+        for_votes: U256,
+        against_votes: U256,
+        executed: Bool,
+        canceled: Bool,
+        voters: Map<Address, Bool>,
+    }
+
+    event ProposalCreated(id: U256, proposer: Address, title: String);
+    event Voted(proposal_id: U256, voter: Address, support: Bool, weight: U256);
+    event ProposalExecuted(id: U256);
+    event ProposalCanceled(id: U256);
+
+    @constructor
+    fn init(token_address: Address) {
+        self.owner = msg.sender;
+        self.token = token_address;
+        self.proposal_count = 0;
+        self.voting_period = 100800; // ~7 days at 200ms blocks
+        self.quorum_bps = 400;       // 4% quorum
+    }
+
+    @public
+    fn create_proposal(title: String, description: String) -> U256 {
+        self.proposal_count = self.proposal_count + 1;
+        let id = self.proposal_count;
+
+        self.proposals[id] = Proposal {
+            proposer: msg.sender,
+            title: title,
+            description: description,
+            start_block: block.height,
+            end_block: block.height + self.voting_period,
+            for_votes: 0,
+            against_votes: 0,
+            executed: false,
+            canceled: false,
+            voters: Map::new(),
+        };
+
+        emit ProposalCreated(id, msg.sender, title);
+        return id;
+    }
+
+    @public
+    fn vote(proposal_id: U256, support: Bool) {
+        let proposal = self.proposals[proposal_id];
+        require(block.height >= proposal.start_block, "Voting not started");
+        require(block.height <= proposal.end_block, "Voting ended");
+        require(!proposal.voters[msg.sender], "Already voted");
+        require(!proposal.canceled, "Proposal canceled");
+
+        let weight = get_voting_power(msg.sender);
+        require(weight > 0, "No voting power");
+
+        proposal.voters[msg.sender] = true;
+
+        if support {
+            proposal.for_votes = proposal.for_votes + weight;
+        } else {
+            proposal.against_votes = proposal.against_votes + weight;
+        }
+
+        emit Voted(proposal_id, msg.sender, support, weight);
+    }
+
+    @public
+    fn execute(proposal_id: U256) {
+        let proposal = self.proposals[proposal_id];
+        require(block.height > proposal.end_block, "Voting still active");
+        require(!proposal.executed, "Already executed");
+        require(!proposal.canceled, "Proposal canceled");
+        require(proposal.for_votes > proposal.against_votes, "Proposal did not pass");
+
+        proposal.executed = true;
+        emit ProposalExecuted(proposal_id);
+    }
+
+    @public
+    fn cancel(proposal_id: U256) {
+        let proposal = self.proposals[proposal_id];
+        require(msg.sender == proposal.proposer || msg.sender == self.owner, "Not authorized");
+        require(!proposal.executed, "Already executed");
+
+        proposal.canceled = true;
+        emit ProposalCanceled(proposal_id);
+    }
+
+    @view
+    fn get_proposal(proposal_id: U256) -> Proposal {
+        return self.proposals[proposal_id];
+    }
+
+    @view
+    fn has_voted(proposal_id: U256, voter: Address) -> Bool {
+        return self.proposals[proposal_id].voters[voter];
+    }
+
+    fn get_voting_power(account: Address) -> U256 {
+        // In production, query the staking contract for delegated power
+        return 1;
+    }
+}

@@ -1,0 +1,12 @@
+[package]
+name = "nxvm"
+version = "0.1.0"
+edition = "2021"
+description = "NEXARA Virtual Machine for smart contract bytecode execution"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+serde = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

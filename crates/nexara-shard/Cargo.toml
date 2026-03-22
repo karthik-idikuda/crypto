@@ -1,0 +1,17 @@
+[package]
+name = "nexara-shard"
+version = "0.1.0"
+edition = "2021"
+description = "100-shard execution layer for the NEXARA blockchain"
+
+[dependencies]
+nexara-crypto = { path = "../nexara-crypto" }
+nexara-core = { path = "../nexara-core" }
+nexara-consensus = { path = "../nexara-consensus" }
+serde = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+rand = { workspace = true }
+dashmap = { workspace = true }
+bincode = { workspace = true }
